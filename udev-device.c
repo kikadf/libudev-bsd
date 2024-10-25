@@ -99,7 +99,11 @@ udev_device_new_from_device_id(struct udev *udev, const char *id)
 LIBUDEV_EXPORT struct udev_device *
 udev_device_new_from_environment(struct udev *udev)
 {
+#if defined(__OpenBSD__)
+	TRC("(%p)", udev);
+#else
 	TRC("(%p)", ud);
+#endif
 	UNIMPL();
 	return (NULL);
 }

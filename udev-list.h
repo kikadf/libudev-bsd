@@ -36,6 +36,12 @@ int udev_list_insert(struct udev_list *ul, char const *name,
     char const *value);
 int udev_list_insertf(struct udev_list *ul, char const *name,
     char const *fmt, ...);
+#if defined(__OpenBSD__)
+int udev_list_remove(struct udev_list *ul, char const *name,
+    char const *value);
+int udev_list_member(struct udev_list *ul, char const *name,
+    char const *value);
+#endif
 void udev_list_free(struct udev_list *ul);
 struct udev_list_entry *udev_list_entry_get_first(struct udev_list *ul);
 const char *_udev_list_entry_get_name(struct udev_list_entry *ule);

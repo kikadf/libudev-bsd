@@ -224,9 +224,11 @@ scandir_sub(char *path, int off, int rem, struct scandir_ctx *ctx)
 int
 scandir_recursive(char *path, size_t len, struct scandir_ctx *ctx)
 {
+	char rpath[PATH_MAX];
 	size_t root_len = strlen(path);
 
-	return (scandir_sub(path, root_len, len - root_len - 1, ctx));
+	strlcpy(rpath, path, sizeof(rpath));
+	return (scandir_sub(rpath, root_len, len - root_len - 1, ctx));
 }
 
 #ifdef HAVE_DEVINFO_H

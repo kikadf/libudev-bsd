@@ -89,6 +89,59 @@ udev_list_insertf(struct udev_list *ul, char const *name, char const *fmt, ...)
 	return (ret);
 }
 
+#if defined(__OpenBSD__)
+int
+udev_list_member(struct udev_list *ul, char const *name, char const *value)
+{
+	struct udev_list_entry *ule;
+	size_t namelen, valuelen;
+	namelen = strlen(name) + 1;
+	valuelen = value == NULL ? 0 : strlen(value) + 1;
+	ule = calloc
+	    (1, offsetof(struct udev_list_entry, name) + namelen + valuelen);
+	if (!ule)
+		return (-1);
+	ule->list = ul;
+	strcpy(ule->name, name);
+	ule->value = NULL;
+	if (value != NULL) {
+		ule->value = ule->name + namelen;
+		strcpy(ule->value, value);
+	}
+	if (RB_FIND(udev_list, ul, ule)) {
+		udev_list_entry_free(ule);
+		return (1);
+	}
+	return (0);
+}
+
+int
+udev_list_remove(struct udev_list *ul, char const *name, char const *value)
+{
+	struct udev_list_entry *ule, *old_ule;
+	size_t namelen, valuelen;
+	namelen = strlen(name) + 1;
+	valuelen = value == NULL ? 0 : strlen(value) + 1;
+	ule = calloc
+	    (1, offsetof(struct udev_list_entry, name) + namelen + valuelen);
+	if (!ule)
+		return (-1);
+	ule->list = ul;
+	strcpy(ule->name, name);
+	ule->value = NULL;
+	if (value != NULL) {
+		ule->value = ule->name + namelen;
+		strcpy(ule->value, value);
+	}
+	old_ule = RB_FIND(udev_list, ul, ule);
+	if (old_ule != NULL) {
+		RB_REMOVE(udev_list, ul, old_ule);
+		udev_list_entry_free(ule);
+	}
+	return (0);
+}
+#endif
+
 void
 udev_list_free(struct udev_list *ul)
 {

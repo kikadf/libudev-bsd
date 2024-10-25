@@ -121,6 +121,21 @@ udev_dev_enumerate(struct udev_enumerate *ue)
 	return (scandir_recursive(path, sizeof(path), &ctx));
 }
 
+#if defined(__OpenBSD__)
+int
+udev_fido_enumerate(struct udev_enumerate *ue)
+{
+	char path[DEV_PATH_MAX] = DEV_PATH_ROOT "/fido/";
+	struct scandir_ctx ctx = {
+		.recursive = true,
+		.cb = udev_dev_enumerate_cb,
+		.args = ue,
+	};
+
+	return (scandir_recursive(path, sizeof(path), &ctx));
+}
+#endif
+
 int
 udev_dev_monitor(char *msg, char *syspath, size_t syspathlen)
 {
