@@ -95,6 +95,11 @@ udev_monitor_set_fd_nonblock(int fd)
 	return (fcntl(fd, F_SETFL, flags | O_NONBLOCK));
 }
 
+#if defined(__OpenBSD__)
+int mib[] = { CTL_KERN, KERN_AUTOCONF_SERIAL };
+extern pthread_mutex_t scan_mtx;
+#endif
+
 LIBUDEV_EXPORT struct udev_device *
 udev_monitor_receive_device(struct udev_monitor *um)
 {
