@@ -27,10 +27,21 @@
 
 #include <sys/socket.h>
 #include <sys/stat.h>
+#if defined(__OpenBSD__)
+#include <net/if_arp.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
+#elif defined(__NetBSD__) 
+#include <net/if_ether.h>
+#else
 #include <net/ethernet.h>
+#endif
 #include <net/if.h>
 #ifdef HAVE_NET_IF_DL_H
 #include <net/if_dl.h>
+#ifndef LLINDEX
+#define LLINDEX(s) ((s)->sdl_index)
+#endif
 #endif
 
 #include <ifaddrs.h>

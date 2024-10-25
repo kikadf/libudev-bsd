@@ -257,13 +257,13 @@ udev_monitor_thread(void *args)
 	sigset_t set;
 	char path[DEV_PATH_MAX] = DEV_PATH_ROOT "/";
 	char path_fido[DEV_PATH_MAX] = DEV_PATH_ROOT "/fido/";
-	struct scan_ctx mctx;
+	struct scandir_ctx mctx;
 	int found;
 	struct udev_list_entry *ce, *pe;
 	size_t size = sizeof(&um->cur_serial);
 	sigfillset(&set);
 	pthread_sigmask(SIG_BLOCK, &set, NULL);
-	mctx = (struct scan_ctx) {
+	mctx = (struct scandir_ctx) {
 		.recursive = true,
 		.cb = obsd_enumerate_cb,
 		.args = um,
