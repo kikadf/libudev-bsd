@@ -1,7 +1,7 @@
 # libbudev
-libudev compatible interface for BSDs based on the [libudev-devd]([url](https://github.com/wulf7/libudev-devd)) FreeBSD project.
-Apply the [libudev-openbsd]([url](https://github.com/rnagy/libudev-openbsd/tree/dev)) changes to support OpenBSD, [patches from DPorts]([url](https://github.com/DragonFlyBSD/DPorts/tree/master/devel/libudev-devd)) to support DragonFly.
-NetBSD support over the [drvctl(4)]([url](https://man.netbsd.org/drvctl.4)).
+libudev compatible interface for BSDs based on the [libudev-devd](https://github.com/wulf7/libudev-devd) FreeBSD project.
+Apply the [libudev-openbsd](https://github.com/rnagy/libudev-openbsd/tree/dev) changes to support OpenBSD, [patches from DPorts](https://github.com/DragonFlyBSD/DPorts/tree/master/devel/libudev-devd) to support DragonFly.
+NetBSD support over the [drvctl(4)](https://man.netbsd.org/drvctl.4).
 
 ### Device support
 | | FreeBSD | DragonFly | OpenBSD | NetBSD |
