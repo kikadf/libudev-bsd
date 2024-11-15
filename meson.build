@@ -40,10 +40,12 @@ procstat_inc = '''#include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
 '''
-procstat_dep = dependency('', required:false)
-if cc.has_header_symbol('libprocstat.h', 'procstat_open_sysctl', prefix : procstat_inc)
-	procstat_dep = cc.find_library('procstat')
-	config_h.set('HAVE_LIBPROCSTAT_H', '1')
+
+procstat_dep = cc.find_library('procstat', required: false)
+if procstat_dep.found()
+	if cc.has_header_symbol('libprocstat.h', 'procstat_open_sysctl', prefix : procstat_inc)
+		config_h.set('HAVE_LIBPROCSTAT_H', '1')
+	endif
 endif
 
 if cc.has_header('dev/hid/hidraw.h')

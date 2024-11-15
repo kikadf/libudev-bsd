@@ -641,7 +641,11 @@ create_drm_handler(struct udev_device *ud)
 
 	/* Get the hw.dri.<cardnum>.busid entry */
 	realpath(devpath, devbuf);
+#if defined(__DragonFly__)
+	if (sscanf(devbuf, "/dev/dri/card%d", &cardnum) != 1)
+#else
 	if (sscanf(devbuf, "/dev/drm/%d", &cardnum) != 1)
+#endif
 		return;
 
 	snprintf(buf, sizeof(buf), "hw.dri.%d.busid", cardnum);
