@@ -453,7 +453,7 @@ udev_device_get_devnum(struct udev_device *ud)
 LIBUDEV_EXPORT const char *
 udev_device_get_devtype(struct udev_device *ud)
 {
-	const char *devtype = NULL;
+	const char *devtype;
 
 	TRC("(%p) %s", ud, ud->syspath);
 	(void)get_subsystem_by_syspath(ud->syspath, &devtype);

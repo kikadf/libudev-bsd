@@ -7,7 +7,7 @@ NetBSD support over the [drvctl(4)](https://man.netbsd.org/drvctl.4).
 | | FreeBSD | DragonFly | OpenBSD | NetBSD |
 | ---: | :---: | :---: | :---: | :---: |
 | **input** | 
-| evdev/input | /dev/input/evenet[0-9]* | /dev/input/evenet[0-9]* | ? | ? |
+| evdev/input | /dev/input/evenet[0-9]* | /dev/input/evenet[0-9]* | - | ? |
 | USB keyboard | /dev/ukbd[0-9]* | ? */dev/kbd[0-9]\** | - | - |
 | AT keyboard | /dev/atkbd[0-9]* | ? */dev/kbd[0-9]\** | - | - |
 | keyboard multiplexer | /dev/kbdmux[0-9]* | ? */dev/kbd[0-9]\** | - | - |
@@ -22,8 +22,8 @@ NetBSD support over the [drvctl(4)](https://man.netbsd.org/drvctl.4).
 | generic keyboard | - | - | - (*/dev/wskbd\**) | - (*/dev/wskbd\**) |
 | generic mouse | - | - | - (*/dev/wsmouse\**) | - (*/dev/wsmouse\**) |
 | **drm** | /dev/dri/card[0-9]* | /dev/dri/card[0-9]* | ? | ? |
-| | /dev/drm/[0-9]* | - | ? | ? |
-| **net** | if* | if* | ? | ? |
-| **hidraw** | /dev/hidraw[0-9]* | - | ? | ? |
-| **pci** | devinfo.h | devinfo.h | ? | ? |
+| | /dev/drm/[0-9]* | - | - | ? |
+| **net** | if* | ? if* | ? | ? |
+| **hidraw** | /dev/hidraw[0-9]* | - | - | - |
+| **pci** | devinfo.h | devinfo.h | - | - |
 | **fido** | - | - | /dev/fido/[0-9]* | ? |
