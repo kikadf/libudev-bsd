@@ -41,6 +41,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#if defined(__NetBSD__)
+#include <ndevd.h>
+#endif
 
 #ifdef HAVE_DEV_HID_HIDRAW_H
 #include <dev/hid/hidraw.h>
@@ -136,6 +139,7 @@ udev_fido_enumerate(struct udev_enumerate *ue)
 }
 #endif
 
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 int
 udev_dev_monitor(char *msg, char *syspath, size_t syspathlen)
 {
@@ -177,6 +181,29 @@ udev_dev_monitor(char *msg, char *syspath, size_t syspathlen)
 
 	return (action);
 }
+#elif defined(__NetBSD__)
+int
+udev_dev_monitor(struct ndevd_msg msg, char *syspath, size_t syspathlen)
+{
+ 	char devpath[DEV_PATH_MAX];
+	size_t devpath_len = sizeof(devpath);
+	int action = UD_ACTION_NONE;
+
+	strlcpy(devpath, DEV_PATH_ROOT "/", devpath_len);
+	strlcat(devpath, msg.device, devpath_len);
+	
+	if (strcmp(msg.event, NDEVD_ATTACH_EVENT) == 0)
+		action = UD_ACTION_ADD;
+	else if (strcmp(msg.event, NDEVD_DETACH_EVENT) == 0)
+		action = UD_ACTION_REMOVE;
+	else
+        return (UD_ACTION_NONE);
+
+	strlcpy(syspath, get_syspath_by_devpath(devpath), syspathlen);
+
+	return (action);
+}
+#endif
 
 static int
 set_input_device_type(struct udev_device *ud, int input_type)
