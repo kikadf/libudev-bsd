@@ -33,7 +33,10 @@
 
 #include "udev-global.h"
 
+#if 0
+# unused, see udev_queue_get_fd()
 #define	DEVD_SOCK_PATH	"/var/run/devd.pipe"
+#endif
 
 struct udev_queue {
 	int refcount;
