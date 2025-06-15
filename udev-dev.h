@@ -29,6 +29,9 @@
 #include "config.h"
 
 #include "udev-utils.h"
+#if defined(__NetBSD__)
+#include <ndevd.h>
+#endif
 
 struct udev_enumerate;
 

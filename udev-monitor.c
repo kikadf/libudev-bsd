@@ -170,7 +170,8 @@ udev_monitor_thread(void *args)
 {
 	struct udev_monitor *um = args;
 #if defined(__NetBSD__)
-	struct ndevd_msg ev;
+	struct ndevd_msg event;
+	void *ev = &event;
 #else
 	char ev[1024];
 #endif
@@ -231,7 +232,7 @@ udev_monitor_thread(void *args)
 				continue;
 			}
 #if defined(__NetBSD__)
-			action = parse_ndevd_message(ev, syspath, sizeof(syspath));
+			action = parse_ndevd_message(event, syspath, sizeof(syspath));
 #else
 			/* Replace terminating LF with 0 to make C-string */
 			ev[len - 1] = '\0';
