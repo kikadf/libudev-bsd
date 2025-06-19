@@ -162,6 +162,10 @@ static const struct subsystem_config subsystems[] = {
 		.subsystem = "input",
 		.syspath = DEV_PATH_ROOT "/wsmouse[0-9]*",
 		.create_handler = create_mouse_handler,
+	}, {
+		.subsystem = "hid",
+		.syspath = DEV_PATH_ROOT "/uhid[0-9]*",
+		.create_handler = create_keyboard_handler,
 	},
 #endif
 
