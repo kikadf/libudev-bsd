@@ -172,8 +172,10 @@ udev_monitor_thread(void *args)
 #if defined(__NetBSD__)
 	struct ndevd_msg event;
 	void *ev = &event;
+	size_t ev_len = sizeof(event);
 #else
 	char ev[1024];
+	size_t ev_len = sizeof(ev);
 #endif
 	char syspath[DEV_PATH_MAX];
 	struct pollfd fds[2];
@@ -225,7 +227,7 @@ udev_monitor_thread(void *args)
 			continue;
 
 		if (fds[1].revents & POLLIN) {
-			if ((len = recv(devd_fd, ev, sizeof(ev), MSG_WAITALL))
+			if ((len = recv(devd_fd, ev, ev_len, MSG_WAITALL))
 			    <= 0) {
 				close(devd_fd);
 				devd_fd = -1;
