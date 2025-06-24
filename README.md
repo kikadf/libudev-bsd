@@ -26,5 +26,4 @@ NetBSD support is provided via [drvctl(4)](https://man.netbsd.org/drvctl.4), usi
 | **net** | if* | ? if* | ? | if* |
 | **hidraw** | /dev/hidraw[0-9]* | - | - | - |
 | **pci** | devinfo.h | devinfo.h | - | - |
-| **fido** | - | - | /dev/fido/[0-9]* | ? |
-| **hid** | - | - | - | /dev/uhid[0-9]* |
+| **fido** | - | - | /dev/fido/[0-9]* | /dev/uhid[0-9]* |
