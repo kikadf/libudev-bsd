@@ -297,13 +297,13 @@ udev_dev_monitor(char *msg, char *syspath, size_t syspathlen)
 int
 udev_dev_monitor(struct ndevd_msg msg, char *syspath, size_t syspathlen)
 {
- 	char devpath[DEV_PATH_MAX];
+	char devpath[DEV_PATH_MAX];
 	size_t devpath_len = sizeof(devpath);
 	int action = UD_ACTION_NONE;
 
 	strlcpy(devpath, DEV_PATH_ROOT "/", devpath_len);
 	strlcat(devpath, msg.device, devpath_len);
-	
+
 	if (strcmp(msg.event, NDEVD_ATTACH_EVENT) == 0)
 		action = UD_ACTION_ADD;
 	else if (strcmp(msg.event, NDEVD_DETACH_EVENT) == 0)
