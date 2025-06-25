@@ -41,6 +41,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#if defined(__NetBSD__)
+#include <ndevd.h>
+#include <sys/ioctl.h>
+#include <dev/usb/usb.h>
+#endif
 
 #ifdef HAVE_DEV_HID_HIDRAW_H
 #include <dev/hid/hidraw.h>
@@ -95,6 +100,111 @@ enum {
 	IT_SWITCH,
 };
 
+#if defined(__NetBSD__)
+static int
+get_key_len(uint8_t tag, uint8_t *key, size_t *key_len)
+{
+	*key = tag & 0xfc;
+	if ((*key & 0xf0) == 0xf0) {
+		return (-1);
+	}
+
+	*key_len = tag & 0x3;
+	if (*key_len == 3) {
+		*key_len = 4;
+	}
+
+	return (0);
+}
+
+static int
+get_key_val(const void *body, size_t key_len, uint32_t *val)
+{
+	const uint8_t *ptr = body;
+
+	switch (key_len) {
+	case 0:
+		*val = 0;
+		break;
+	case 1:
+		*val = ptr[0];
+		break;
+	case 2:
+		*val = (uint32_t)((ptr[1] << 8) | ptr[0]);
+		break;
+	default:
+		return (-1);
+	}
+
+	return (0);
+}
+
+static int
+fido_hid_get_usage(const uint8_t *report_ptr, size_t report_len, uint32_t *usage_page)
+{
+	const uint8_t *ptr = report_ptr;
+	size_t len = report_len;
+
+	while (len > 0) {
+		const uint8_t tag = ptr[0];
+		ptr++;
+		len--;
+
+		uint8_t  key;
+		size_t   key_len;
+		uint32_t key_val;
+
+		if (get_key_len(tag, &key, &key_len) < 0 || key_len > len ||
+		    get_key_val(ptr, key_len, &key_val) < 0) {
+			return (-1);
+		}
+
+		if (key == 0x4) {
+			*usage_page = key_val;
+		}
+
+		ptr += key_len;
+		len -= key_len;
+	}
+
+	return (0);
+}
+
+static bool
+is_fido(const char *path)
+{
+	int devfd = -1;
+	struct usb_ctl_report_desc ucrd;
+	uint32_t usage_page = 0;
+
+	memset(&ucrd, 0, sizeof(ucrd));
+
+	if ((devfd = open(path, O_RDWR)) == -1) {
+		return false;
+	}
+
+	if (ioctl(devfd, USB_GET_REPORT_DESC, &ucrd) == -1) {
+		goto not_fido;
+	}
+
+	if (ucrd.ucrd_size < 0 || (size_t)ucrd.ucrd_size > sizeof(ucrd.ucrd_data) ||
+	    fido_hid_get_usage(ucrd.ucrd_data, (size_t)ucrd.ucrd_size, &usage_page) < 0) {
+		goto not_fido;
+	}
+
+	if (usage_page != 0xf1d0) {
+		goto not_fido;
+	}
+
+	close(devfd);
+	return true;
+
+not_fido:
+	close(devfd);
+	return false;
+}
+#endif
+
 static int
 udev_dev_enumerate_cb(const char *path, mode_t type, void *arg)
 {
@@ -103,6 +213,11 @@ udev_dev_enumerate_cb(const char *path, mode_t type, void *arg)
 
 	if (S_ISLNK(type) || S_ISCHR(type)) {
 		syspath = get_syspath_by_devpath(path);
+#if defined(__NetBSD__)
+		if ((strstr(syspath, "uhid") != NULL) && (!is_fido(syspath))) {
+			return (0);
+		}
+#endif
 		return (udev_enumerate_add_device(ue, syspath));
 	}
 	return (0);
@@ -136,6 +251,7 @@ udev_fido_enumerate(struct udev_enumerate *ue)
 }
 #endif
 
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 int
 udev_dev_monitor(char *msg, char *syspath, size_t syspathlen)
 {
@@ -177,6 +293,29 @@ udev_dev_monitor(char *msg, char *syspath, size_t syspathlen)
 
 	return (action);
 }
+#elif defined(__NetBSD__)
+int
+udev_dev_monitor(struct ndevd_msg msg, char *syspath, size_t syspathlen)
+{
+	char devpath[DEV_PATH_MAX];
+	size_t devpath_len = sizeof(devpath);
+	int action = UD_ACTION_NONE;
+
+	strlcpy(devpath, DEV_PATH_ROOT "/", devpath_len);
+	strlcat(devpath, msg.device, devpath_len);
+
+	if (strcmp(msg.event, NDEVD_ATTACH_EVENT) == 0)
+		action = UD_ACTION_ADD;
+	else if (strcmp(msg.event, NDEVD_DETACH_EVENT) == 0)
+		action = UD_ACTION_REMOVE;
+	else
+        return (UD_ACTION_NONE);
+
+	strlcpy(syspath, get_syspath_by_devpath(devpath), syspathlen);
+
+	return (action);
+}
+#endif
 
 static int
 set_input_device_type(struct udev_device *ud, int input_type)

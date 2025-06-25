@@ -44,7 +44,13 @@
 #include <string.h>
 #include <unistd.h>
 
+#if defined(__NetBSD__)
+#include <ndevd.h>
+#define	DEVD_SOCK_PATH		NDEVD_SOCKET
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 #define	DEVD_SOCK_PATH		"/var/run/devd.seqpacket.pipe"
+#endif
+
 #define	DEVD_RECONNECT_INTERVAL	1000	/* reconnect after 1 second */
 
 STAILQ_HEAD(udev_monitor_queue_head, udev_monitor_queue_entry);
@@ -131,6 +137,17 @@ udev_monitor_send_device(struct udev_monitor *um, const char *syspath,
 }
 
 #if !defined(__OpenBSD__)
+#if defined(__NetBSD__)
+static int
+parse_ndevd_message(struct ndevd_msg msg, char *syspath, size_t syspathlen)
+{
+	int action;
+
+	action = udev_dev_monitor(msg, syspath, syspathlen);
+
+	return (action);
+}
+#else
 static int
 parse_devd_message(char *msg, char *syspath, size_t syspathlen)
 {
@@ -146,12 +163,21 @@ parse_devd_message(char *msg, char *syspath, size_t syspathlen)
 
 	return (action);
 }
+#endif
 
 static void *
 udev_monitor_thread(void *args)
 {
 	struct udev_monitor *um = args;
-	char ev[1024], syspath[DEV_PATH_MAX];
+#if defined(__NetBSD__)
+	struct ndevd_msg event;
+	void *ev = &event;
+	size_t ev_len = sizeof(event);
+#else
+	char ev[1024];
+	size_t ev_len = sizeof(ev);
+#endif
+	char syspath[DEV_PATH_MAX];
 	struct pollfd fds[2];
 	nfds_t nfds;
 	ssize_t len;
@@ -201,15 +227,19 @@ udev_monitor_thread(void *args)
 			continue;
 
 		if (fds[1].revents & POLLIN) {
-			if ((len = recv(devd_fd, ev, sizeof(ev), MSG_WAITALL))
+			if ((len = recv(devd_fd, ev, ev_len, MSG_WAITALL))
 			    <= 0) {
 				close(devd_fd);
 				devd_fd = -1;
 				continue;
 			}
+#if defined(__NetBSD__)
+			action = parse_ndevd_message(event, syspath, sizeof(syspath));
+#else
 			/* Replace terminating LF with 0 to make C-string */
 			ev[len - 1] = '\0';
 			action = parse_devd_message(ev, syspath, sizeof(syspath));
+#endif
 			if (action != UD_ACTION_NONE &&
 			    udev_filter_match(um->udev, &um->filters, syspath))
 				udev_monitor_send_device(um, syspath, action);

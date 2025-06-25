@@ -1,4 +1,4 @@
-project('libbudev', 'c',
+project('libudev-bsd', 'c',
 	version : '0.6.0',
 	license : 'BSD2CLAUSE',
 	default_options : [
@@ -8,7 +8,7 @@ project('libbudev', 'c',
 		'werror=true' ],
 	meson_version : '>=0.50.0')
 
-libbudev_version = meson.project_version().split('.')
+libudevbsd_version = meson.project_version().split('.')
 
 dir_data        = join_paths(get_option('prefix'), get_option('datadir'))
 dir_sysconf     = join_paths(get_option('prefix'), get_option('sysconfdir'))
@@ -91,14 +91,14 @@ if cc.has_function('sysctlbyname')
 	config_h.set('HAVE_SYSCTLBYNAME', '1')
 endif
 
-libbudev_so_version = '0.0.0'
+libudevbsd_so_version = '0.0.0'
 # Dependencies
 thread_dep = dependency('threads')
 
 pkgconfig = import('pkgconfig')
 
 install_headers('libudev.h')
-src_libbudev = [ 'udev.c',
+src_libudevbsd = [ 'udev.c',
 	'udev-dev.c',
 	'udev-dev.h',
 	'udev-device.c',
@@ -127,27 +127,27 @@ src_libbudev = [ 'udev.c',
 
 if get_option('enable-gpl')
 	config_h.set('ENABLE_GPL', '1')
-	src_libbudev += [ 'utils-gpl.c',  'utils-gpl.h' ]
+	src_libudevbsd += [ 'utils-gpl.c',  'utils-gpl.h' ]
 endif
 
 
-deps_libbudev = [
+deps_libudevbsd = [
 	thread_dep,
 	devinfo_dep,
 	procstat_dep
 ]
 
-lib_libbudev = shared_library('udev',
-	src_libbudev,
+lib_libudevbsd = shared_library('udev',
+	src_libudevbsd,
 	include_directories : config_h_inc,
-	dependencies : deps_libbudev,
-	version : libbudev_so_version,
+	dependencies : deps_libudevbsd,
+	version : libudevbsd_so_version,
 	install : true
 )
 
-pkgconfig.generate(lib_libbudev,
+pkgconfig.generate(lib_libudevbsd,
 	name : 'libudev',
-	url : 'https://github.com/kikadf/libbudev',
+	url : 'https://github.com/kikadf/libudev-bsd',
 	description : 'Library to access udev device information',
 	version : '243', # XXX - should be a proper version
 )
