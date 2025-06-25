@@ -43,6 +43,8 @@
 #include <unistd.h>
 #if defined(__NetBSD__)
 #include <ndevd.h>
+#include <sys/ioctl.h>
+#include <dev/usb/usb.h>
 #endif
 
 #ifdef HAVE_DEV_HID_HIDRAW_H
@@ -98,87 +100,7 @@ enum {
 	IT_SWITCH,
 };
 
-static int
-udev_dev_enumerate_cb(const char *path, mode_t type, void *arg)
-{
-	struct udev_enumerate *ue = arg;
-	const char *syspath;
-
-	if (S_ISLNK(type) || S_ISCHR(type)) {
-		syspath = get_syspath_by_devpath(path);
 #if defined(__NetBSD__)
-		if ((strstr(syspath, "uhid") != NULL) && (!is_fido(syspath))) {
-			return (0);
-		}
-#endif
-		return (udev_enumerate_add_device(ue, syspath));
-	}
-	return (0);
-}
-
-int
-udev_dev_enumerate(struct udev_enumerate *ue)
-{
-	char path[DEV_PATH_MAX] = DEV_PATH_ROOT "/";
-	struct scandir_ctx ctx = {
-		.recursive = true,
-		.cb = udev_dev_enumerate_cb,
-		.args = ue,
-	};
-
-	return (scandir_recursive(path, sizeof(path), &ctx));
-}
-
-#if defined(__OpenBSD__)
-int
-udev_fido_enumerate(struct udev_enumerate *ue)
-{
-	char path[DEV_PATH_MAX] = DEV_PATH_ROOT "/fido/";
-	struct scandir_ctx ctx = {
-		.recursive = true,
-		.cb = udev_dev_enumerate_cb,
-		.args = ue,
-	};
-
-	return (scandir_recursive(path, sizeof(path), &ctx));
-}
-#endif
-
-#if defined(__NetBSD__)
-static bool
-is_fido(const char *path)
-{
-	int devfd = -1;
-	struct usb_ctl_report_desc ucrd;
-	uint32_t usage_page = 0;
-
-	memset(&ucrd, 0, sizeof(ucrd));
-
-	if ((devfd = open(path, O_RDWR)) == -1) {
-		return false;
-	}
-
-	if (ioctl(devfd, IOCTL_REQ(USB_GET_REPORT_DESC), &ucrd) == -1) {
-		goto not_fido;
-	}
-
-	if (ucrd.ucrd_size < 0 || (size_t)ucrd.ucrd_size > sizeof(ucrd.ucrd_data) ||
-	    fido_hid_get_usage(ucrd.ucrd_data, (size_t)ucrd.ucrd_size, &usage_page) < 0) {
-		goto not_fido;
-	}
-
-	if (usage_page != 0xf1d0) {
-		goto not_fido;
-	}
-
-	close(devfd);
-	return true;
-
-not_fido:
-	close(devfd);
-	return false;
-}
-
 static int
 get_key_len(uint8_t tag, uint8_t *key, size_t *key_len)
 {
@@ -246,6 +168,86 @@ fido_hid_get_usage(const uint8_t *report_ptr, size_t report_len, uint32_t *usage
 	}
 
 	return (0);
+}
+
+static bool
+is_fido(const char *path)
+{
+	int devfd = -1;
+	struct usb_ctl_report_desc ucrd;
+	uint32_t usage_page = 0;
+
+	memset(&ucrd, 0, sizeof(ucrd));
+
+	if ((devfd = open(path, O_RDWR)) == -1) {
+		return false;
+	}
+
+	if (ioctl(devfd, USB_GET_REPORT_DESC, &ucrd) == -1) {
+		goto not_fido;
+	}
+
+	if (ucrd.ucrd_size < 0 || (size_t)ucrd.ucrd_size > sizeof(ucrd.ucrd_data) ||
+	    fido_hid_get_usage(ucrd.ucrd_data, (size_t)ucrd.ucrd_size, &usage_page) < 0) {
+		goto not_fido;
+	}
+
+	if (usage_page != 0xf1d0) {
+		goto not_fido;
+	}
+
+	close(devfd);
+	return true;
+
+not_fido:
+	close(devfd);
+	return false;
+}
+#endif
+
+static int
+udev_dev_enumerate_cb(const char *path, mode_t type, void *arg)
+{
+	struct udev_enumerate *ue = arg;
+	const char *syspath;
+
+	if (S_ISLNK(type) || S_ISCHR(type)) {
+		syspath = get_syspath_by_devpath(path);
+#if defined(__NetBSD__)
+		if ((strstr(syspath, "uhid") != NULL) && (!is_fido(syspath))) {
+			return (0);
+		}
+#endif
+		return (udev_enumerate_add_device(ue, syspath));
+	}
+	return (0);
+}
+
+int
+udev_dev_enumerate(struct udev_enumerate *ue)
+{
+	char path[DEV_PATH_MAX] = DEV_PATH_ROOT "/";
+	struct scandir_ctx ctx = {
+		.recursive = true,
+		.cb = udev_dev_enumerate_cb,
+		.args = ue,
+	};
+
+	return (scandir_recursive(path, sizeof(path), &ctx));
+}
+
+#if defined(__OpenBSD__)
+int
+udev_fido_enumerate(struct udev_enumerate *ue)
+{
+	char path[DEV_PATH_MAX] = DEV_PATH_ROOT "/fido/";
+	struct scandir_ctx ctx = {
+		.recursive = true,
+		.cb = udev_dev_enumerate_cb,
+		.args = ue,
+	};
+
+	return (scandir_recursive(path, sizeof(path), &ctx));
 }
 #endif
 
