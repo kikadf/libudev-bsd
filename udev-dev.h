@@ -61,6 +61,7 @@ int udev_fido_enumerate(struct udev_enumerate *ue);
 int udev_dev_monitor(char *msg, char *syspath, size_t syspathlen);
 #elif defined(__NetBSD__)
 int udev_dev_monitor(struct ndevd_msg msg, char *syspath, size_t syspathlen);
+bool is_fido(const char *syspath);
 #endif
 
 #endif /* UDEV_DEV_H_ */

@@ -170,7 +170,7 @@ fido_hid_get_usage(const uint8_t *report_ptr, size_t report_len, uint32_t *usage
 	return (0);
 }
 
-static bool
+bool
 is_fido(const char *path)
 {
 	int devfd = -1;
