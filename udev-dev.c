@@ -682,6 +682,16 @@ create_keyboard_handler(struct udev_device *ud)
 	set_parent(ud);
 }
 
+#if defined(__NetBSD__)
+void
+create_fido_handler(struct udev_device *ud)
+{
+
+	udev_list_insert(udev_device_get_properties_list(ud), "ID_SECURITY_TOKEN", "1");
+	set_parent(ud);
+}
+#endif
+
 void
 create_mouse_handler(struct udev_device *ud)
 {

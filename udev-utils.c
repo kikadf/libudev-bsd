@@ -165,7 +165,7 @@ static const struct subsystem_config subsystems[] = {
 	}, {
 		.subsystem = "fido",
 		.syspath = DEV_PATH_ROOT "/uhid[0-9]*",
-		.create_handler = create_keyboard_handler,
+		.create_handler = create_fido_handler,
 	},
 #endif
 
