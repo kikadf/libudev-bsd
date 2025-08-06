@@ -46,6 +46,9 @@ create_node_handler_t	create_touchscreen_handler;
 create_node_handler_t	create_sysmouse_handler;
 create_node_handler_t	create_kbdmux_handler;
 create_node_handler_t	create_drm_handler;
+#if defined(__NetBSD__)
+create_node_handler_t	create_fido_handler;
+#endif
 #ifdef HAVE_DEV_HID_HIDRAW_H
 create_node_handler_t	create_hidraw_handler;
 #endif
@@ -58,6 +61,7 @@ int udev_fido_enumerate(struct udev_enumerate *ue);
 int udev_dev_monitor(char *msg, char *syspath, size_t syspathlen);
 #elif defined(__NetBSD__)
 int udev_dev_monitor(struct ndevd_msg msg, char *syspath, size_t syspathlen);
+bool is_fido(const char *syspath);
 #endif
 
 #endif /* UDEV_DEV_H_ */

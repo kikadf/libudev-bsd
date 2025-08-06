@@ -170,7 +170,7 @@ fido_hid_get_usage(const uint8_t *report_ptr, size_t report_len, uint32_t *usage
 	return (0);
 }
 
-static bool
+bool
 is_fido(const char *path)
 {
 	int devfd = -1;
@@ -681,6 +681,16 @@ create_keyboard_handler(struct udev_device *ud)
 	set_input_device_type(ud, IT_KEYBOARD);
 	set_parent(ud);
 }
+
+#if defined(__NetBSD__)
+void
+create_fido_handler(struct udev_device *ud)
+{
+
+	udev_list_insert(udev_device_get_properties_list(ud), "ID_SECURITY_TOKEN", "1");
+	set_parent(ud);
+}
+#endif
 
 void
 create_mouse_handler(struct udev_device *ud)

@@ -235,6 +235,9 @@ udev_monitor_thread(void *args)
 			}
 #if defined(__NetBSD__)
 			action = parse_ndevd_message(event, syspath, sizeof(syspath));
+			if ((strstr(syspath, "uhid") != NULL) && (action = UD_ACTION_ADD) && (!is_fido(syspath))) {
+				action = UD_ACTION_NONE;
+			}
 #else
 			/* Replace terminating LF with 0 to make C-string */
 			ev[len - 1] = '\0';
