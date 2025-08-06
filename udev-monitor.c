@@ -235,7 +235,11 @@ udev_monitor_thread(void *args)
 			}
 #if defined(__NetBSD__)
 			action = parse_ndevd_message(event, syspath, sizeof(syspath));
-			if ((strstr(syspath, "uhid") != NULL) && (action = UD_ACTION_ADD) && (!is_fido(syspath))) {
+			/* Only match uhid devices to fido when attached, but
+			   all uhid devices will match as fido when dettached. 
+			   The is_fido() need to open /dev/uhid[0-9]* to check,
+			   if open fails (uhid device is detached), it returns false. */
+			if ((strstr(syspath, "uhid") != NULL) && (action == UD_ACTION_ADD) && (!is_fido(syspath))) {
 				action = UD_ACTION_NONE;
 			}
 #else
