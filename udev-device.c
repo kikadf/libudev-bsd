@@ -168,6 +168,13 @@ udev_device_get_tags_list_entry(struct udev_device *ud)
 	return (udev_list_entry_get_first(udev_device_get_tags_list(ud)));
 }
 
+LIBUDEV_EXPORT struct udev_list_entry *
+udev_device_get_current_tags_list_entry(struct udev_device *udev_device)
+{
+	// TODO: udev-bsd database does not support current tags
+	return udev_device_get_tags_list_entry(udev_device);
+}
+
 LIBUDEV_EXPORT int
 udev_device_has_tag(struct udev_device *ud, const char *tag)
 {
@@ -183,6 +190,12 @@ udev_device_get_devlinks_list(struct udev_device *ud)
 {
 
 	return (&ud->devlink_list);
+}
+
+LIBUDEV_EXPORT int
+udev_device_has_current_tag(struct udev_device *udev_device, const char *tag) {
+	// TODO: udev-bsd database does not support current tags
+	return udev_device_has_tag(udev_device, tag);
 }
 
 LIBUDEV_EXPORT struct udev_list_entry *
