@@ -31,6 +31,7 @@
 #include "udev-utils.h"
 #if defined(__NetBSD__)
 #include <ndevd.h>
+#include <stdbool.h>
 #endif
 
 struct udev_enumerate;
@@ -60,8 +61,12 @@ int udev_fido_enumerate(struct udev_enumerate *ue);
 #if defined(__FreeBSD__) || defined(__DragonFly__)
 int udev_dev_monitor(char *msg, char *syspath, size_t syspathlen);
 #elif defined(__NetBSD__)
-int udev_dev_monitor(struct ndevd_msg msg, char *syspath, size_t syspathlen);
+void fido_global_init(void);
+void fido_global_cleanup(void);
 bool is_fido(const char *syspath);
+bool is_known_fido(const char *syspath);
+void remove_fido_device(const char *syspath);
+int udev_dev_monitor(struct ndevd_msg msg, char *syspath, size_t syspathlen);
 #endif
 
 #endif /* UDEV_DEV_H_ */

@@ -43,6 +43,8 @@
 #include <unistd.h>
 #if defined(__NetBSD__)
 #include <ndevd.h>
+#include <pthread.h>
+#include <sys/queue.h>
 #include <sys/ioctl.h>
 #include <dev/usb/usb.h>
 #endif
@@ -101,6 +103,42 @@ enum {
 };
 
 #if defined(__NetBSD__)
+struct known_fidos {
+	char *fido;
+	TAILQ_ENTRY(known_fidos) link;
+};
+static TAILQ_HEAD(, known_fidos) fido_devices;
+static pthread_mutex_t fido_mutex;
+static bool fido_initialized = false;
+
+void
+fido_global_init(void)
+{
+	if (!fido_initialized) {
+		TAILQ_INIT(&fido_devices);
+		pthread_mutex_init(&fido_mutex, NULL);
+		fido_initialized = true;
+	}
+}
+
+void
+fido_global_cleanup(void)
+{
+	if (fido_initialized) {
+		struct known_fidos *n, *tmp;
+
+		pthread_mutex_lock(&fido_mutex);
+		TAILQ_FOREACH_SAFE(n, &fido_devices, link, tmp) {
+			free(n->fido);
+			free(n);
+		}
+		pthread_mutex_unlock(&fido_mutex);
+
+		pthread_mutex_destroy(&fido_mutex);
+		fido_initialized = false;
+	}
+}
+
 static int
 get_key_len(uint8_t tag, uint8_t *key, size_t *key_len)
 {
@@ -171,6 +209,72 @@ fido_hid_get_usage(const uint8_t *report_ptr, size_t report_len, uint32_t *usage
 }
 
 bool
+is_known_fido(const char *path)
+{
+	struct known_fidos *n;
+
+	pthread_mutex_lock(&fido_mutex);
+	TAILQ_FOREACH(n, &fido_devices, link) {
+		if (strcmp(n->fido, path) == 0) {
+			pthread_mutex_unlock(&fido_mutex);
+			return true;
+		}
+	}
+	pthread_mutex_unlock(&fido_mutex);
+
+	return false;
+}
+
+void
+remove_fido_device(const char *path)
+{
+	struct known_fidos *n, *tmp;
+
+	pthread_mutex_lock(&fido_mutex);
+	TAILQ_FOREACH_SAFE(n, &fido_devices, link, tmp) {
+		if (strcmp(n->fido, path) == 0) {
+			TAILQ_REMOVE(&fido_devices, n, link);
+			free(n->fido);
+			free(n);
+			break;
+		}
+	}
+	pthread_mutex_unlock(&fido_mutex);
+}
+
+static void
+insert_fido_device(const char *path)
+{
+	struct known_fidos *c, *n;
+
+	if (!path) {
+        return;
+	}
+
+	pthread_mutex_lock(&fido_mutex);
+	TAILQ_FOREACH(c, &fido_devices, link) {
+		if (strcmp(c->fido, path) == 0) {
+			goto out;
+		}
+	}
+
+	if ((n = calloc(1, sizeof(*n))) == NULL) {
+		goto out;
+	}
+
+	n->fido = strdup(path);
+	if (!n->fido) {
+		free(n);
+		goto out;
+	}
+
+	TAILQ_INSERT_TAIL(&fido_devices, n, link);
+
+out:
+	pthread_mutex_unlock(&fido_mutex);
+}
+
+bool
 is_fido(const char *path)
 {
 	int devfd = -1;
@@ -197,6 +301,7 @@ is_fido(const char *path)
 	}
 
 	close(devfd);
+	insert_fido_device(path);
 	return true;
 
 not_fido:

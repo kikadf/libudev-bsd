@@ -43,6 +43,9 @@ udev_new(void)
 	if (udev) {
 		udev->refcount = 1;
 		udev->userdata = NULL;
+#if defined(__NetBSD__)
+		fido_global_init();
+#endif
 	}
 
 	return (udev);
@@ -68,8 +71,12 @@ void
 _udev_unref(struct udev *udev)
 {
 
-	if (--udev->refcount == 0)
+	if (--udev->refcount == 0) {
+#if defined(__NetBSD__)
+		fido_global_cleanup();
+#endif
 		free(udev);
+	}
 }
 
 LIBUDEV_EXPORT void

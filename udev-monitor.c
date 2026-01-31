@@ -46,6 +46,7 @@
 
 #if defined(__NetBSD__)
 #include <ndevd.h>
+#include <ctype.h>
 #define	DEVD_SOCK_PATH		NDEVD_SOCKET
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
 #define	DEVD_SOCK_PATH		"/var/run/devd.seqpacket.pipe"
@@ -235,12 +236,17 @@ udev_monitor_thread(void *args)
 			}
 #if defined(__NetBSD__)
 			action = parse_ndevd_message(event, syspath, sizeof(syspath));
-			/* Only match uhid devices to fido when attached, but
-			   all uhid devices will match as fido when dettached. 
-			   The is_fido() need to open /dev/uhid[0-9]* to check,
-			   if open fails (uhid device is detached), it returns false. */
-			if ((strstr(syspath, "uhid") != NULL) && (action == UD_ACTION_ADD) && (!is_fido(syspath))) {
-				action = UD_ACTION_NONE;
+			if (strncmp(syspath, "/dev/uhid", 9) == 0 && isdigit((unsigned char)syspath[9])) {
+				if ((action == UD_ACTION_ADD) && (!is_fido(syspath))) {
+					action = UD_ACTION_NONE;
+				}
+				if (action == UD_ACTION_REMOVE) {
+					if (is_known_fido(syspath)) {
+						remove_fido_device(syspath);
+					} else {
+						action = UD_ACTION_NONE;
+					}
+				}
 			}
 #else
 			/* Replace terminating LF with 0 to make C-string */
