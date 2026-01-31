@@ -19,8 +19,8 @@ NetBSD support is provided via [drvctl(4)](https://man.netbsd.org/drvctl.4), usi
 | eGalax touchscreen | /dev/uep[0-9]* | /dev/uep[0-9]* | - | - |
 | virtualized mouse | /dev/sysmouse | /dev/sysmouse | - | - |
 | vboxguest | /dev/vboxguest | - | - | - |
-| generic keyboard | - | - | - (*/dev/wskbd\**) | /dev/wskbd[0-9]* |
-| generic mouse | - | - | - (*/dev/wsmouse\**) | /dev/wsmouse[0-9]* |
+| generic keyboard | - | - | /dev/wskbd[0-9]* | /dev/wskbd[0-9]* |
+| generic mouse | - | - | /dev/wsmouse[0-9]* | /dev/wsmouse[0-9]* |
 | **drm** | /dev/dri/card[0-9]* | /dev/dri/card[0-9]* | /dev/dri/card[0-9]* | /dev/dri/card[0-9]* |
 | | /dev/drm/[0-9]* | - | - | - |
 | **net** | if* | ? if* | ? | if* |

@@ -146,14 +146,20 @@ static const struct subsystem_config subsystems[] = {
 		.create_handler = create_pci_handler,
 	},
 #endif
+#if defined(__OpenBSD__) || defined(__NetBSD__)
 #if defined(__OpenBSD__)
 	{
 		.subsystem = "fido",
 		.syspath = DEV_PATH_ROOT "/fido/[0-9]*",
 		.create_handler = create_keyboard_handler,
 	},
+#elif defined(__NetBSD__)
+	{
+		.subsystem = "fido",
+		.syspath = DEV_PATH_ROOT "/uhid[0-9]*",
+		.create_handler = create_fido_handler,
+	},
 #endif
-#if defined(__NetBSD__)
 	{
 		.subsystem = "input",
 		.syspath = DEV_PATH_ROOT "/wskbd[0-9]*",
@@ -162,10 +168,6 @@ static const struct subsystem_config subsystems[] = {
 		.subsystem = "input",
 		.syspath = DEV_PATH_ROOT "/wsmouse[0-9]*",
 		.create_handler = create_mouse_handler,
-	}, {
-		.subsystem = "fido",
-		.syspath = DEV_PATH_ROOT "/uhid[0-9]*",
-		.create_handler = create_fido_handler,
 	},
 #endif
 
