@@ -1,5 +1,5 @@
 project('libudev-bsd', 'c',
-	version : '0.6.0.3',
+	version : '0.7.0.1',
 	license : 'BSD2CLAUSE',
 	default_options : [
 		'buildtype=debugoptimized',
