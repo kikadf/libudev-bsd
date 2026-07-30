@@ -464,7 +464,8 @@ udev_monitor_get_fd(struct udev_monitor *um)
 LIBUDEV_EXPORT struct udev_monitor *
 udev_monitor_ref(struct udev_monitor *um)
 {
-
+	if (um == NULL)
+		return (NULL);
 	TRC("(%p) refcount=%d", um, um->refcount);
 	++um->refcount;
 	return (um);
@@ -486,6 +487,8 @@ udev_monitor_queue_drop(struct udev_monitor_queue_head *umqh)
 LIBUDEV_EXPORT struct udev_monitor *
 udev_monitor_unref(struct udev_monitor *um)
 {
+	if (um == NULL)
+		return (NULL);
 	TRC("(%p) refcount=%d", um, um->refcount);
 	if (--um->refcount == 0) {
 		close(um->fds[0]);

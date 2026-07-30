@@ -338,6 +338,9 @@ udev_device_get_subsystem(struct udev_device *ud)
 LIBUDEV_EXPORT struct udev_device *
 udev_device_ref(struct udev_device *ud)
 {
+	if (ud == NULL)
+		return (NULL);
+
 	TRC("(%p/%s) %d", ud, ud->syspath, ud->refcount);
 
 	++ud->refcount;
@@ -361,6 +364,8 @@ udev_device_free(struct udev_device *ud)
 LIBUDEV_EXPORT struct udev_device *
 udev_device_unref(struct udev_device *ud)
 {
+	if (ud == NULL)
+		return (NULL);
 	TRC("(%p/%s) %d", ud, ud->syspath, ud->refcount);
 	if (--ud->refcount == 0)
 		udev_device_free(ud);

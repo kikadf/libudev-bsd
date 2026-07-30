@@ -70,7 +70,8 @@ udev_enumerate_new(struct udev *udev)
 LIBUDEV_EXPORT struct udev_enumerate *
 udev_enumerate_ref(struct udev_enumerate *ue)
 {
-
+	if (ue == NULL)
+		return (NULL);
 	TRC("(%p) refcount=%d", ue, ue->refcount);
 	++ue->refcount;
 	return (ue);
@@ -79,7 +80,8 @@ udev_enumerate_ref(struct udev_enumerate *ue)
 LIBUDEV_EXPORT struct udev_enumerate *
 udev_enumerate_unref(struct udev_enumerate *ue)
 {
-
+	if (ue == NULL)
+		return (NULL);
 	TRC("(%p) refcount=%d", ue, ue->refcount);
 	if (--ue->refcount == 0) {
 		udev_filter_free(&ue->filters);
