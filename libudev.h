@@ -43,7 +43,7 @@ struct udev_hwdb;
 
 struct udev *udev_new(void);
 struct udev *udev_ref(struct udev *udev);
-void udev_unref(struct udev *udev);
+struct udev *udev_unref(struct udev *udev);
 const char *udev_get_dev_path(struct udev *udev);
 void *udev_get_userdata(struct udev *udev);
 void udev_set_userdata(struct udev *udev, void *userdata);
@@ -103,7 +103,7 @@ unsigned long long int udev_device_get_usec_since_initialized(
 
 struct udev_enumerate *udev_enumerate_new(struct udev *udev);
 struct udev_enumerate *udev_enumerate_ref(struct udev_enumerate *udev_enumerate);
-void udev_enumerate_unref(struct udev_enumerate *udev_enumerate);
+struct udev_enumerate *udev_enumerate_unref(struct udev_enumerate *udev_enumerate);
 int udev_enumerate_add_match_subsystem(
     struct udev_enumerate *udev_enumerate, const char *subsystem);
 int udev_enumerate_add_nomatch_subsystem(
@@ -145,7 +145,7 @@ struct udev_list_entry *udev_list_entry_get_by_name(
 struct udev_monitor *udev_monitor_new_from_netlink(struct udev *udev,
     const char *name);
 struct udev_monitor *udev_monitor_ref(struct udev_monitor *um);
-void udev_monitor_unref(struct udev_monitor *udev_monitor);
+struct udev_monitor *udev_monitor_unref(struct udev_monitor *udev_monitor);
 int udev_monitor_filter_add_match_subsystem_devtype(
     struct udev_monitor *udev_monitor, const char *subsystem,
     const char *devtype);

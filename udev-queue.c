@@ -80,7 +80,7 @@ udev_queue_unref(struct udev_queue *uq)
 		udev_unref(uq->udev);
                 free(uq);
         }
-        return (uq);
+        return (NULL);
 }
 
 LIBUDEV_EXPORT struct udev *

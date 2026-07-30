@@ -67,7 +67,7 @@ udev_ref(struct udev *udev)
 	return (_udev_ref(udev));
 }
 
-void
+struct udev *
 _udev_unref(struct udev *udev)
 {
 
@@ -76,17 +76,19 @@ _udev_unref(struct udev *udev)
 		fido_global_cleanup();
 #endif
 		free(udev);
+		udev = NULL;
 	}
+	return (udev);
 }
 
-LIBUDEV_EXPORT void
+LIBUDEV_EXPORT struct udev *
 udev_unref(struct udev *udev)
 {
 
-	if (!udev)
-		return;
+	if (udev == NULL)
+		return (NULL);
 	TRC("(%p) refcount=%d", udev, udev->refcount);
-	_udev_unref(udev);
+	return (_udev_unref(udev));
 }
 
 LIBUDEV_EXPORT const char *

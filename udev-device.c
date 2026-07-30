@@ -354,7 +354,7 @@ udev_device_free(struct udev_device *ud)
 	udev_list_free(&ud->devlink_list);
 	if (!ud->flags.parent_ref && ud->parent != NULL)
 		udev_device_free(ud->parent);
-	_udev_unref(ud->udev);
+	(void)_udev_unref(ud->udev);
 	free(ud);
 }
 

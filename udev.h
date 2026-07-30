@@ -29,6 +29,6 @@
 #include "libudev.h"
 
 struct udev *_udev_ref(struct udev *udev);
-void _udev_unref(struct udev *udev);
+struct udev *_udev_unref(struct udev *udev);
 
 #endif /* UDEV_H_ */
