@@ -46,6 +46,7 @@
 #include <pthread.h>
 #include <sys/queue.h>
 #include <sys/ioctl.h>
+#include <sys/drvctlio.h>
 #include <dev/usb/usb.h>
 #endif
 
@@ -110,6 +111,13 @@ struct known_fidos {
 static TAILQ_HEAD(, known_fidos) fido_devices;
 static pthread_mutex_t fido_mutex;
 static bool fido_initialized = false;
+
+struct drvctl_devs {
+        char *device;
+        TAILQ_ENTRY(drvctl_devs) link;
+};
+static TAILQ_HEAD(, drvctl_devs) drvctl_devices;
+static bool drvctl_initialized = false;
 
 void
 fido_global_init(void)
@@ -308,6 +316,134 @@ not_fido:
 	close(devfd);
 	return false;
 }
+
+static void
+udev_drvctl_init(void)
+{
+        if (!drvctl_initialized) {
+                TAILQ_INIT(&drvctl_devices);
+                drvctl_initialized = true;
+        }
+}
+
+/* Based on NetBSD/src/sbin/devpubd/devpubd.c: devpubd_probe()
+ * Copyright (c) 2011 Jared D. McNeill <jmcneill@invisible.ca> */
+static int
+udev_drvctl_get_devices(int drvctl_fd, const char *device)
+{
+        struct devlistargs laa;
+        size_t len, children, n;
+        void *p;
+        int ret = -1;
+
+        memset(&laa, 0, sizeof(laa));
+        if (device) {
+                strlcpy(laa.l_devname, device, sizeof(laa.l_devname));
+        }
+
+        /* Get the child device count for this device */
+        ret = ioctl(drvctl_fd, DRVLISTDEV, &laa);
+        if (ret) {
+                return ret;
+        }
+
+child_count_changed:
+        /* If this device has no children, return */
+        if (laa.l_children == 0) {
+                return 0;
+        }
+
+        /* Allocate a buffer large enough to hold the child device names */
+        p = laa.l_childname;
+        children = laa.l_children;
+
+        len = children * sizeof(laa.l_childname[0]);
+        laa.l_childname = realloc(laa.l_childname, len);
+        if (laa.l_childname == NULL) {
+                laa.l_childname = p;
+                ret = -1;
+                goto out;
+        }
+
+        /* Get a list of child devices */
+        ret = ioctl(drvctl_fd, DRVLISTDEV, &laa);
+        if (ret) {
+                goto out;
+        }
+
+        /* If the child count changed between DRVLISTDEV calls, retry */
+        if (children != laa.l_children) {
+                goto child_count_changed;
+        }
+
+        /* Add child devices to drvctl_devices */
+        for (n = 0; n < laa.l_children; n++) {
+                struct drvctl_devs *i = calloc(1, sizeof(*i));
+                if (i == NULL) {
+                        goto out;
+                }
+                i->device = strdup(laa.l_childname[n]);
+                if (i->device == NULL) {
+                        free(i);
+                        goto out;
+                }
+                TAILQ_INSERT_TAIL(&drvctl_devices, i, link);
+        }
+        for (n = 0; n < laa.l_children; n++) {
+                ret = udev_drvctl_get_devices(drvctl_fd, laa.l_childname[n]);
+                if (ret) {
+                        goto out;
+                }
+        }
+
+out:
+        free(laa.l_childname);
+        return ret;
+}
+
+void
+udev_drvctl_devices_destroy(void)
+{
+        struct drvctl_devs *n, *tmp;
+
+        if (drvctl_initialized) {
+                TAILQ_FOREACH_SAFE(n, &drvctl_devices, link, tmp) {
+                        free(n->device);
+                        free(n);
+                }
+                drvctl_initialized = false;
+        }
+}
+
+static bool
+udev_syspath_in_drvctl_devices(const char *syspath)
+{
+        struct drvctl_devs *c;
+        int drvctl_fd = -1;
+        int ret = 0;
+
+        const char *sysname = get_sysname_by_syspath(syspath);
+
+        if (!drvctl_initialized) {
+                drvctl_fd = open(DRVCTLDEV, O_RDONLY);
+                if (drvctl_fd == -1) {
+                        return false;
+                }
+                udev_drvctl_init();
+                ret = udev_drvctl_get_devices(drvctl_fd, NULL);
+                close(drvctl_fd);
+        }
+
+        if (!ret) {
+                TAILQ_FOREACH(c, &drvctl_devices, link) {
+                        if (strcmp(c->device, sysname) == 0) {
+                                return true;
+                        }
+                }
+        }
+
+        return false;
+}
 #endif
 
 static int
@@ -322,6 +458,9 @@ udev_dev_enumerate_cb(const char *path, mode_t type, void *arg)
 		if ((strstr(syspath, "uhid") != NULL) && (!is_fido(syspath))) {
 			return (0);
 		}
+		if (!udev_syspath_in_drvctl_devices(syspath)) {
+			return (0);
+		}
 #endif
 		return (udev_enumerate_add_device(ue, syspath));
 	}
@@ -331,6 +470,8 @@ udev_dev_enumerate_cb(const char *path, mode_t type, void *arg)
 int
 udev_dev_enumerate(struct udev_enumerate *ue)
 {
+	int ret;
+
 	char path[DEV_PATH_MAX] = DEV_PATH_ROOT "/";
 	struct scandir_ctx ctx = {
 		.recursive = true,
@@ -338,7 +479,11 @@ udev_dev_enumerate(struct udev_enumerate *ue)
 		.args = ue,
 	};
 
-	return (scandir_recursive(path, sizeof(path), &ctx));
+	ret = scandir_recursive(path, sizeof(path), &ctx);
+#if defined(__NetBSD__)
+	udev_drvctl_devices_destroy();
+#endif
+	return (ret);
 }
 
 #if defined(__OpenBSD__)
