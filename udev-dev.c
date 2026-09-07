@@ -114,6 +114,7 @@ static bool fido_initialized = false;
 
 struct drvctl_devs {
         char *device;
+        char *parent;
         TAILQ_ENTRY(drvctl_devs) link;
 };
 static TAILQ_HEAD(, drvctl_devs) drvctl_devices;
@@ -387,6 +388,7 @@ child_count_changed:
                         free(i);
                         goto out;
                 }
+                i->parent = strdup(laa.l_devname);
                 TAILQ_INSERT_TAIL(&drvctl_devices, i, link);
         }
         for (n = 0; n < laa.l_children; n++) {
