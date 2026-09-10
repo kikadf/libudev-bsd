@@ -115,6 +115,7 @@ static bool fido_initialized = false;
 struct drvctl_devs {
         char *device;
         char *parent;
+        char *drmpath;
         TAILQ_ENTRY(drvctl_devs) link;
 };
 static TAILQ_HEAD(, drvctl_devs) drvctl_devices;
@@ -411,6 +412,8 @@ udev_drvctl_devices_destroy(void)
         if (drvctl_initialized) {
                 TAILQ_FOREACH_SAFE(n, &drvctl_devices, link, tmp) {
                         free(n->device);
+                        free(n->parent);
+                        free(n->drmpath);
                         free(n);
                 }
                 drvctl_initialized = false;
@@ -421,7 +424,10 @@ static bool
 udev_syspath_in_drvctl_devices(const char *syspath)
 {
         struct drvctl_devs *c;
+        struct drm_version d = {0};
         int drvctl_fd = -1;
+        int drm_fd = -1;
+	bool found_drm = false;
         int ret = 0;
 
         const char *sysname = get_sysname_by_syspath(syspath);
@@ -434,7 +440,42 @@ udev_syspath_in_drvctl_devices(const char *syspath)
                 udev_drvctl_init();
                 ret = udev_drvctl_get_devices(drvctl_fd, NULL);
                 close(drvctl_fd);
+		if (ret != 0) {
+			drvctl_initialized = false;
+		}
         }
+
+	if (strcmp(get_subsystem_by_syspath(syspath, NULL), "drm") == 0) {
+		drm_fd = open(syspath, O_RDONLY);
+		if (drm_fd == -1) {
+			return false;
+		}
+		if (ioctl(drm_fd, DRM_IOCTL_VERSION, &d) == -1) {
+			close(drm_fd);
+			return false;
+		}
+		d.name = calloc(1, d.name_len + 1);
+		if (d.name == NULL) {
+			close(drm_fd);
+			return false;
+		}
+		if (ioctl(drm_fd, DRM_IOCTL_VERSION, &d) == -1) {
+			free(d.name);
+			close(drm_fd);
+			return false;
+		}
+		TAILQ_FOREACH(c, &drvctl_devices, link) {
+			if (strstr(c->device, d.name) != NULL) {
+				free(c->drmpath);
+				c->drmpath = strdup(syspath);
+				found_drm = true;
+				break;
+			}
+		}
+		free(d.name);
+		close(drm_fd);
+		return found_drm;
+	}
 
         if (!ret) {
                 TAILQ_FOREACH(c, &drvctl_devices, link) {
