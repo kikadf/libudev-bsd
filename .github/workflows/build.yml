@@ -65,7 +65,7 @@ jobs:
         shell: cpa.sh {0}
         run: |
           # Set PKG_PATH for package repository
-          export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/amd64/$NETBSD_VERSION/All"
+          export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/amd64/${{ env.NETBSD_VERSION }}/All"
 
           # Install deps
           sudo -E pkg_add -v meson ninja-build pkgconf ndevd
