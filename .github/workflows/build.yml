@@ -7,6 +7,8 @@ on:
 jobs:
   freebsd-build:
     runs-on: ubuntu-latest
+    env:
+      FREEBSD_VERSION: '15.1'
     steps:
       - name: Repository checkout
         uses: actions/checkout@v6
@@ -14,23 +16,28 @@ jobs:
       - uses: cross-platform-actions/action@v1.4.0
         with:
           operating_system: 'freebsd'
-          version: '15.1'
+          version: '${{ env.FREEBSD_VERSION }}'
           architecture: 'x86_64'
-          run: |
-            # Use latest package set
-            sudo mkdir -p /usr/local/etc/pkg/repos/
-            sudo cp /etc/pkg/FreeBSD.conf /usr/local/etc/pkg/repos/FreeBSD.conf
-            sudo sed -i.bak -e 's|/quarterly|/latest|' /usr/local/etc/pkg/repos/FreeBSD.conf
 
-            # Install deps
-            sudo -E pkg install -y \
-                evdev-proto meson ninja pkgconf
+      - name: Build on FreeBSD
+        shell: cpa.sh {0}
+        run: |
+          # Use latest package set
+          sudo mkdir -p /usr/local/etc/pkg/repos/
+          sudo cp /etc/pkg/FreeBSD.conf /usr/local/etc/pkg/repos/FreeBSD.conf
+          sudo sed -i.bak -e 's|/quarterly|/latest|' /usr/local/etc/pkg/repos/FreeBSD.conf
 
-            # Run the build
-            env CPPFLAGS='-isystem /usr/local/include' CFLAGS='-isystem /usr/local/include' meson _build
-            ninja -v -C _build
+          # Install deps
+          sudo -E pkg install -y evdev-proto meson ninja pkgconf
+
+          # Run the build
+          env CPPFLAGS='-isystem /usr/local/include' CFLAGS='-isystem /usr/local/include' meson _build
+          ninja -v -C _build
+
   dragonfly-build:
     runs-on: ubuntu-latest
+    env:
+      DFLY_VERSION: '6.4.2'
     steps:
       - name: Repository checkout
         uses: actions/checkout@v6
@@ -38,15 +45,19 @@ jobs:
       - uses: cross-platform-actions/action@v1.4.0
         with:
           operating_system: 'dragonflybsd'
-          version: '6.4.2'
+          version: '${{ env.DFLY_VERSION }}'
           architecture: 'x86_64'
-          run: |
-            # Install deps
-            sudo -E pkg install -y evdev-proto meson ninja pkgconf
 
-            # Run the build
-            env CPPFLAGS='-isystem /usr/local/include' CFLAGS='-isystem /usr/local/include' meson _build
-            ninja -v -C _build
+      - name: Build on DragonFly
+        shell: cpa.sh {0}
+        run: |
+          # Install deps
+          sudo -E pkg install -y evdev-proto meson ninja pkgconf
+
+          # Run the build
+          env CPPFLAGS='-isystem /usr/local/include' CFLAGS='-isystem /usr/local/include' meson _build
+          ninja -v -C _build
+
   netbsd-build:
     runs-on: ubuntu-latest
     env:
@@ -65,10 +76,10 @@ jobs:
         shell: cpa.sh {0}
         run: |
           # Set PKG_PATH for package repository
-          export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/amd64/$NETBSD_VERSION/All"
+          export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/amd64/${{ env.NETBSD_VERSION }}/All"
 
           # Install deps
-          sudo -E pkg_add -v meson ninja-build pkgconf ndevd
+          sudo -E pkg_add meson ninja-build pkgconf ndevd
 
           # Run the build
           env CPPFLAGS='-isystem /usr/pkg/include' CFLAGS='-isystem /usr/pkg/include' meson _build
@@ -76,6 +87,8 @@ jobs:
 
   openbsd-build:
     runs-on: ubuntu-latest
+    env:
+      OPENBSD_VERSION: '11.0'
     steps:
       - name: Repository checkout
         uses: actions/checkout@v6
@@ -83,12 +96,15 @@ jobs:
       - uses: cross-platform-actions/action@v1.4.0
         with:
           operating_system: 'openbsd'
-          version: '7.8'
+          version: '${{ env.OPENBSD_VERSION }}'
           architecture: 'x86_64'
-          run: |
-            # Install deps
-            sudo -E pkg_add -v  meson ninja pkgconf
 
-            # Run the build
-            env CPPFLAGS='-isystem /usr/local/include' CFLAGS='-isystem /usr/local/include' meson _build
-            ninja -v -C _build
+      - name: Build on OpenBSD
+        shell: cpa.sh {0}
+        run: |
+          # Install deps
+          sudo -E pkg_add meson ninja pkgconf
+
+          # Run the build
+          env CPPFLAGS='-isystem /usr/local/include' CFLAGS='-isystem /usr/local/include' meson _build
+          ninja -v -C _build
