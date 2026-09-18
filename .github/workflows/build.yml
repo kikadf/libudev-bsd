@@ -49,6 +49,8 @@ jobs:
             ninja -v -C _build
   netbsd-build:
     runs-on: ubuntu-latest
+    env:
+      NETBSD_VERSION: '11.0'
     steps:
       - name: Repository checkout
         uses: actions/checkout@v6
@@ -56,15 +58,22 @@ jobs:
       - uses: cross-platform-actions/action@v1.4.0
         with:
           operating_system: 'netbsd'
-          version: '11.0'
+          version: '${{ env.NETBSD_VERSION }}'
           architecture: 'x86_64'
-          run: |
-            # Install deps
-            sudo -E pkg_add -v meson ninja-build pkgconf ndevd
 
-            # Run the build
-            env CPPFLAGS='-isystem /usr/pkg/include' CFLAGS='-isystem /usr/pkg/include' meson _build
-            ninja -v -C _build
+      - name: Build on NetBSD
+        shell: cpa.sh {0}
+        run: |
+          # Set PKG_PATH for package repository
+          export PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/amd64/$NETBSD_VERSION/All"
+
+          # Install deps
+          sudo -E pkg_add -v meson ninja-build pkgconf ndevd
+
+          # Run the build
+          env CPPFLAGS='-isystem /usr/pkg/include' CFLAGS='-isystem /usr/pkg/include' meson _build
+          ninja -v -C _build
+
   openbsd-build:
     runs-on: ubuntu-latest
     steps:
